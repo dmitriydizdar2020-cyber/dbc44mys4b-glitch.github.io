@@ -318,3 +318,11 @@ button:active{transform:scale(.985)}button:focus-visible,input:focus-visible,tex
 .mb7-plan-list .mb-more:active{background:#31547b!important}
 .mb7-plan-filters button{font-size:11px;padding:9px 12px;min-height:42px}
 .mb7-plan-list .mb-task-row{background:transparent!important}
+
+/* MONTBLANC 7.1: trusted-device opt-in */
+.device-remember{display:flex;align-items:flex-start;gap:13px;margin:14px 0;padding:15px 16px;border-radius:15px;background:rgba(77,136,228,.11);border:1px solid rgba(117,162,235,.25);cursor:pointer;line-height:1.5}
+.device-remember input{width:22px;height:22px;flex:none;margin:1px 0;accent-color:#569af6}
+.device-remember span{display:flex;flex-direction:column;gap:3px}
+.device-remember b{font-size:15px;color:inherit}
+.device-remember small{font-size:12px;line-height:1.5;opacity:.72}
+.mb7-trusted-device{margin-top:20px;padding:17px;border:1px solid rgba(117,162,235,.28);border-radius:16px;background:rgba(77,136,228,.07)}
