@@ -326,3 +326,18 @@ button:active{transform:scale(.985)}button:focus-visible,input:focus-visible,tex
 .device-remember b{font-size:15px;color:inherit}
 .device-remember small{font-size:12px;line-height:1.5;opacity:.72}
 .mb7-trusted-device{margin-top:20px;padding:17px;border:1px solid rgba(117,162,235,.28);border-radius:16px;background:rgba(77,136,228,.07)}
+
+/* MONTBLANC 7.2 — saved states and read-only history */
+.mb7-saved-note{border:1px solid rgba(94,168,129,.45);background:rgba(59,140,105,.12);border-radius:17px;padding:16px 17px;display:flex;flex-direction:column;gap:6px;margin-bottom:15px;color:#d7f9e7}
+.mb7-saved-note b{font-size:16px;line-height:1.4}
+.mb7-saved-note small{font-size:13px;line-height:1.5;opacity:.78}
+.mb7-saved-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.mb7-saved-field{min-width:0;padding:13px 15px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(132,155,192,.18)}
+.mb7-saved-field span{display:block;font-size:12px;line-height:1.4;color:#94a7c3;letter-spacing:.02em;margin-bottom:6px}
+.mb7-saved-field p{margin:0;font-size:15px;line-height:1.58;font-weight:450;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;color:#edf4ff}
+.mb7-saved-buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.mb7-saved-buttons .button{flex:1;min-width:155px;min-height:48px}
+.mb7-history-detail .card{margin-top:14px}
+.mb7-history-detail .button{min-height:46px}
+.mb7-history-detail .mb7-page-title{margin-bottom:18px}
+@media(max-width:375px){.mb7-saved-field{padding:12px}.mb7-saved-buttons .button{width:100%}}
