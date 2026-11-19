@@ -312,3 +312,9 @@ button:active{transform:scale(.985)}button:focus-visible,input:focus-visible,tex
 .mb7-plan-list .mb-task-actions .mb-soft-btn{background:#253448!important;color:#b6d1ed!important;border-radius:12px!important}
 .mb7-plan-list .mb-task-note{color:#92a5bc!important}
 @media(max-width:360px){.mb7-plan-actions .button{padding:9px 7px;font-size:11px}.mb7-plan-list{padding:12px}.mb7-plan-summary strong{font-size:21px}}
+
+/* Final tactile polish: eliminate bright legacy action squares. */
+.mb7-plan-list .mb-more{background:#283951!important;border:1px solid #39506e!important;color:#b9d6f9!important;border-radius:12px!important}
+.mb7-plan-list .mb-more:active{background:#31547b!important}
+.mb7-plan-filters button{font-size:11px;padding:9px 12px;min-height:42px}
+.mb7-plan-list .mb-task-row{background:transparent!important}
