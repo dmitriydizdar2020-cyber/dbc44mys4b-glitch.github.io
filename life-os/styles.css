@@ -454,3 +454,40 @@ button:active{transform:scale(.985)}button:focus-visible,input:focus-visible,tex
   #app .mobile-dock.mb7-dock{padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
   #app .mobile-dock.mb7-dock button{min-height:44px;height:44px}
 }
+
+/* MONTBLANC 9.2.1 — plan controls match the dark theme everywhere, including 7-day groups */
+.mb7-plan .mb-task-check{
+ background:#233951!important;
+ border:2px solid #527394!important;
+ color:#edf7ff!important;
+ border-radius:13px!important;
+ box-shadow:none!important;
+}
+.mb7-plan .mb-task-check.checked{
+ background:#3479d8!important;
+ border-color:#7db9ff!important;
+ color:#fff!important;
+}
+.mb7-plan .mb-more{
+ background:#22374e!important;
+ color:#a9c9e8!important;
+ border:1px solid #38526e!important;
+ border-radius:12px!important;
+ box-shadow:none!important;
+}
+.mb7-plan .mb-more:active,
+.mb7-plan .mb-more:focus-visible{background:#2c4b6b!important}
+.mb7-plan .mb8-day-group .mb-task{
+ border-top:1px solid #2b3b4c!important;
+ background:transparent!important;
+ border-radius:0!important;
+ padding:14px 0!important;
+}
+.mb7-plan .mb8-day-group .mb-task:first-of-type{border-top:0!important}
+.mb7-plan .mb8-day-group .mb-task-row{background:transparent!important;outline:none!important}
+.mb7-plan .mb-task-actions .mb-soft-btn{
+ background:#23374d!important;
+ color:#b2cce7!important;
+ border:1px solid #324b66!important;
+ min-height:44px;
+}
