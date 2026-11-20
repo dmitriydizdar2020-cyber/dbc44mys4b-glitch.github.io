@@ -415,3 +415,42 @@ button:active{transform:scale(.985)}button:focus-visible,input:focus-visible,tex
 .mb10-rate{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:#a4bdd5;margin-bottom:9px}.mb10-rate b{color:#e7f5ff}.mb10-section h3{font-size:15px;margin-top:20px}
 @media(max-width:360px){.mb10-start-finish{grid-template-columns:1fr}.mb10-map{padding:12px 8px}.mb10-stats>div{padding:11px}.mb10-hero h1{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.mb10-progress-track i{transition:none}}
+
+/* MONTBLANC 9.2 — stable iPhone bottom navigation.
+   WebKit can mis-anchor fixed footers during long-page and PWA scrolling.
+   Use a viewport-height application shell with the CONTENT as the scroll owner.
+   The dock is a non-scrolling flex child, not a viewport-positioned overlay. */
+@media (max-width:860px){
+  html:has(.mb7-shell),
+  body:has(.mb7-shell){height:100%;overflow:hidden;overscroll-behavior:none}
+  #app:has(.mb7-shell){height:100dvh;max-height:100dvh;overflow:hidden}
+  #app .mb7-shell{
+    display:flex;flex-direction:column;min-height:0;
+    height:100dvh;max-height:100dvh;overflow:hidden;overflow-x:hidden;
+  }
+  #app .mb7-main{
+    flex:1 1 auto;min-height:0;height:auto;
+    overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #app .mobile-dock.mb7-dock{
+    position:relative!important;inset:auto!important;
+    bottom:auto!important;top:auto!important;left:auto!important;right:auto!important;
+    flex:0 0 auto;align-self:stretch;width:100%;min-width:0;
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+    z-index:45;background:#111924;
+    border-top:1px solid #334151;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 -10px 35px #0005;
+  }
+  #app .mobile-dock.mb7-dock button{
+    min-width:0;min-height:55px;touch-action:manipulation;
+  }
+}
+@media (max-width:860px) and (orientation:landscape){
+  #app .mobile-dock.mb7-dock{padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+  #app .mobile-dock.mb7-dock button{min-height:44px;height:44px}
+}
