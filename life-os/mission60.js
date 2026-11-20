@@ -148,6 +148,23 @@ function create(ctx){
     personalDone,personalTotal:privateTasks.length,combinedDone:done+personalDone,combinedTotal:possible+privateTasks.length,
     journey:all?Math.round(done/all*100):0,actual:possible?Math.round(done/possible*100):0};
  }
+
+ function recommendations(p=get(),s=stats(p)){
+  if(!p||!s)return ['Начни с одного конкретного шага. Реальные наблюдения начнут собираться после старта.'];
+  const available=s.elapsed,dayCut=plus(today(),-6),logs=S().data.daily_logs.filter(x=>x.log_date>=dayCut&&x.log_date<=today());
+  const energy=logs.map(x=>Number(x.evening_energy)).filter(x=>Number.isFinite(x)&&x>=1&&x<=10);
+  const avgEnergy=energy.length?energy.reduce((a,b)=>a+b,0)/energy.length:null;
+  const tips=[];
+  if(avgEnergy!==null&&avgEnergy<=4)tips.push('Энергия в последних записях невысокая. Выбери бережный темп и больше восстановления, не пытаясь наверстать пропущенное.');
+  if(available>=4&&s.active/available<0.5)tips.push('Пока менее половины дней были активными. Выбери один лёгкий шаг сегодня и вернись к ритму без самокритики.');
+  if(available>=4&&s.areas.focus.done<=1&&s.personalDone>=3)tips.push('Обычные дела выполняются, но шагов в сторону дохода немного. Выдели короткий блок на проверку спроса.');
+  if(available>=5&&s.areas.english.done/Math.max(1,s.areas.english.possible)<0.4)tips.push('Английский пока реже остальных практик. Начни с 15 минут устной речи и повторения.');
+  if(available>=5&&s.areas.sport.done/Math.max(1,s.areas.sport.possible)<0.4)tips.push('Движения было немного. Можно начать с короткой прогулки или мягкой разминки, если это подходит по самочувствию.');
+  if(available>=7&&s.active>=5)tips.push('Уже '+s.active+' активных дней — у тебя появляется повторяемый ритм. Сохраняй удобное время практики.');
+  if(s.done>=20&&ctx.monthIncome()===0)tips.push('Практика идёт, но доход пока не подтверждён. Сверяй не только выполненные шаги, но и отклики, предложения и реальные оплаты.');
+  if(!tips.length)tips.push('Прогресс начинается с подтверждённых действий. Держи один главный приоритет, а вечером фиксируй результат и препятствие.');
+  return tips.slice(0,3);
+ }
  function awards(s=stats()){
   if(!s)return [];
   return [
@@ -307,10 +324,11 @@ function create(ctx){
    section('РЕАЛЬНЫЕ ЗАПИСИ','Твои показатели')+'<div class="m60-metrics">'+indicators.map(x=>'<div><span>'+x[0]+' '+x[1]+'</span><strong>'+x[2]+'</strong><small>'+x[3]+'</small></div>').join('')+'</div>'+
    section('ФИНАНСЫ','От нуля к устойчивости')+'<section class="m60-card m60-finances"><div><span>Доход за месяц</span><b>'+money(m)+'</b></div><div><span>Остаток долга</span><b>'+money(debt)+'</b></div><div><span>Годовая цель дохода</span><b>'+money(goal)+'</b></div><button data-page="finance" class="m60-textbutton">Доходы, расходы и резерв →</button><button data-page="goals" class="m60-textbutton">Мои измеримые цели →</button></section>'+
    (s?'<section class="m60-card"><h2>Путь по неделям</h2><div class="m60-weekbars">'+s.weeks.map((w,i)=>{const pct=w.possible?Math.round(w.done/w.possible*100):0;return '<div><div><i style="height:'+pct+'%"></i></div><b>'+(i+1)+'</b><small>'+(w.possible?pct+'%':'—')+'</small></div>'}).join('')+'</div></section>':'')+
+   section('ПОДСКАЗКИ ПО ТВОИМ ЗАПИСЯМ','Что поможет двигаться дальше')+'<section class="m60-card m60-insights">'+recommendations(p,s).map(x=>'<div><span>✦</span><p>'+e(x)+'</p></div>').join('')+'<p class="m60-hint">Подсказки формируются локально по отметкам. Это не диагностика и не рекомендации врача.</p></section>'+
    section('НАГРАДЫ','Заслуженные достижения')+'<section class="m60-card"><div class="m60-awards"><div class="m60-award-count"><strong>'+earned+'</strong><small>из '+aw.length+' открыто</small></div>'+aw.map(x=>'<div class="'+(x.earned?'earned':'')+'"><span>'+x.emoji+'</span><b>'+x.title+'</b><small>'+(x.earned?'Открыто':'Впереди')+'</small></div>').join('')+'</div><p class="m60-hint">Пропущенный день не обнуляет ранее сделанное.</p></section>'+
    '<section class="m60-card m60-tail"><button data-page="review">🧠 Недельные выводы →</button><button data-page="route">🏔️ Мой маршрут А → Б →</button><button data-page="more">▦ Все инструменты и архив →</button></section></div>';
  }
- return {AREAS,PHASES,INCOME_STEPS,get,elapsed,dateOf,index,tasks,auto,status,stats,awards,start,pace,toggle,
+ return {AREAS,PHASES,INCOME_STEPS,recommendations,get,elapsed,dateOf,index,tasks,auto,status,stats,awards,start,pace,toggle,
   journalRow:diaryRow,saveJournal,saveDraft,home,program,planner,diary,progress};
 }
 global.MONTBLANC60={create};
