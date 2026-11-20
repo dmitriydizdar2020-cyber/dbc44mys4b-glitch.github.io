@@ -611,7 +611,7 @@ case 'feed-filter':state.feedFilter=btn.dataset.value||'all';render();break;
 case 'task-scope':state.taskScope=btn.dataset.value||'today';render();break;
 case 'task-sub-toggle':await run(async()=>{const t=state.data.tasks.find(x=>x.id===id),sub=t?.subtasks?.find(x=>x.id===btn.dataset.subid);if(!sub)return;await saveRecord('tasks',{...t,subtasks:t.subtasks.map(s=>s.id===sub.id?{...s,done:!s.done}:s)});render()});break;
 case 'reflection-mode':captureDraftOnRender();state.reflectionMode=btn.dataset.value||'quick';render();break;
-case 'reflection-date':state.reflectionDate=btn.dataset.value||today();state.reflectionEditing=false;render();break;
+case 'reflection-date':await M60.saveDraft();state.reflectionDate=btn.dataset.value||today();state.reflectionEditing=false;render();break;
 case 'reflection-edit':state.reflectionEditing=true;render();break;
 case 'settings-edit':state.settingsEditing=true;render();break;
 case 'summit-edit':state.summitEditing=true;render();break;

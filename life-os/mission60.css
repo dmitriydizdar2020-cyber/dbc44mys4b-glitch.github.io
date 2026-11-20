@@ -181,3 +181,28 @@ html:has(.mb12-shell),body:has(.mb12-shell){background:#f7f8fa;color:#1b2940;col
  .m60-daynav{gap:3px}.m60-daynav button{min-width:35px}
 }
 @media(prefers-reduced-motion:reduce){.m60-track i{transition:none}}
+
+/* Integrated light modals and archive polish; app's saved data remains unchanged. */
+body:has(.mb12-shell) .overlay{background:#26395388!important}
+body:has(.mb12-shell) .modal{background:#fff!important;color:#1b2b44!important;border:1px solid #dce6f1!important;box-shadow:0 25px 70px #162d4b30!important}
+body:has(.mb12-shell) .modal h2,
+body:has(.mb12-shell) .modal h3,
+body:has(.mb12-shell) .modal label,
+body:has(.mb12-shell) .modal .form-field label{color:#233650!important}
+body:has(.mb12-shell) .modal .control,
+body:has(.mb12-shell) .modal input,
+body:has(.mb12-shell) .modal select,
+body:has(.mb12-shell) .modal textarea{background:#f8fbff!important;color:#20344e!important;border:1px solid #d7e2ef!important;border-radius:11px!important;font-size:16px}
+body:has(.mb12-shell) .modal .button{border-radius:12px}
+body:has(.mb12-shell) .modal p,
+body:has(.mb12-shell) .modal .muted{color:#7e91a7!important}
+body:has(.mb12-shell) .toast{background:#fff!important;color:#2d5d9a!important;border:1px solid #d8e8f9!important;box-shadow:0 10px 35px #1636532a!important}
+.mb12-shell .mb7-more .mb7-page-title h1{color:#1c2e45!important}
+.mb12-shell .mb7-more .mb7-page-title p{color:#7a8da3!important}
+.mb12-shell .mb7-more .mb7-menu-section{background:#fff!important;border:1px solid #e4ebf3!important;border-radius:18px!important;overflow:hidden}
+.mb12-shell .mb7-more .mb7-menu-heading h2{color:#283e5a!important}
+.mb12-shell .mb7-more .mb7-menu-heading p{color:#8497ac!important}
+.mb12-shell .mb7-more .mb7-menu-item{background:#fff!important;color:#2e4361!important;border-bottom:1px solid #edf0f5!important}
+.mb12-shell .mb7-more .mb7-menu-item strong{color:#2e4361!important}
+.mb12-shell .mb7-more .mb7-menu-item small{color:#8a9db0!important}
+.mb12-shell .mb7-more .mb7-menu-symbol{color:#447fc8!important}
