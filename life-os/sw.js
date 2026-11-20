@@ -1,6 +1,6 @@
 /* MONTBLANC 7.0 — offline app shell only; never cache private records or API calls. */
-const CACHE = 'montblanc-v10.0-evolution-20261121';
-const ASSETS = ['./','./index.html','./app.js','./github-sync.js','./config.js','./styles.css','./apple-light.css','./favicon.svg','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./pwa.js','./mountain-hero.webp'];
+const CACHE = 'montblanc-v12.0-life60-20261121';
+const ASSETS = ['./','./index.html','./app.js','./github-sync.js','./config.js','./styles.css','./mission60.css','./mission60.js','./apple-light.css','./favicon.svg','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./pwa.js','./mountain-hero.webp'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
