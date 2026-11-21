@@ -222,7 +222,7 @@ function create(ctx){
   const a=analysis(),c=get();
   const data={completed_days:a.days,total_required_days:60,streak:currentStreak(c),minutes_by_area:a.metrics,energy_week1_vs_latest:a.energy,confidence_week1_vs_latest:a.confidence,starting_income_recorded:a.baseIncome,current_month_income:a.finance,customer_contacts:a.sales,replies:a.replies,paid_events_by_diary:a.payments,remarks:'Self-reported evidence, not verified independently. Incomplete days not counted.'};
   if(includeNotes){
-   data.journal=a.logs.map(x=>({date:x.log_date,thoughts:String(x.thoughts||'').slice(0,1500),win:String(x.win_of_day||'').slice(0,500)}));
+   data.journal=S().data.daily_logs.filter(x=>x.log_date>=c.started&&x.log_date<=today()&&x.reflection_done).sort((a,b)=>String(a.log_date).localeCompare(String(b.log_date))).map(x=>({date:x.log_date,thoughts:String(x.thoughts||'').slice(0,1500),win:String(x.win_of_day||'').slice(0,500)}));
    data.practice_evidence=Array.from({length:a.days},(_,i)=>({day:i+1,proofs:Object.fromEntries(TRACKS.filter(t=>t.id!=='diary').map(t=>[t.id,entry(i,c).proofs?.[t.id]?.note||'']))}));
   }
   return 'Подготовь развернутый, аккуратный разбор моего прогресса за 60-дневный вызов MONTBLANC. Данные — самоотчёты, не считай их независимым подтверждением. Сравни исходный и последний доступный период, отдели действия от результатов, укажи пробелы и неопределённость, оцени отдельно английский, спорт, коммуникацию, коммерческие результаты, дисциплину, самочувствие. Баллы 0–10 обоснуй только доступными фактами, не придумывай рост уровня английского. Сформулируй 5 доказанных изменений, 5 остающихся препятствий и персональный план на следующие 30 дней. Не давай медицинских диагнозов.\n'+JSON.stringify(data,null,2);
