@@ -20,5 +20,7 @@ jobs:
           node-version: '22'
       - name: Check module syntax
         run: node --check life-os/mission60.js
+      - name: Check application syntax
+        run: node --input-type=module --check < life-os/app.js
       - name: Run 60-day regression tests
         run: node --test life-os/tests/montblanc60.test.cjs
