@@ -109,3 +109,17 @@
 .c60-milestone-grid>div.unlocked strong{color:#248056}
 .c60-milestone-grid small{font-size:11px;color:#8a9aaf}
 @media(max-width:370px){.c60-milestone-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Release 14.0.1 — clear, above-the-fold legacy upgrade entry */
+.c60-upgrade{background:linear-gradient(145deg,#ecf5ff 0%,#fff 78%)!important;border-color:#c9defb!important;box-shadow:0 12px 38px #234b8f12!important;margin-bottom:17px}
+.c60-upgrade-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.c60-upgrade-top>span{font-size:10px;color:#396db5;letter-spacing:.12em;font-weight:840}
+.c60-upgrade-top strong{color:white;background:#3279d9;font-size:10px;border-radius:7px;padding:5px 8px;letter-spacing:.08em}
+.c60-upgrade h2{font-size:clamp(21px,5vw,28px);line-height:1.2;letter-spacing:-.05em;color:#1e446d!important;margin:13px 0!important}
+.c60-upgrade p{font-size:14px!important;color:#587b9e!important;line-height:1.6}
+.c60-upgrade .m60-primary{margin-top:15px;min-height:51px}
+.c60-upgrade>small{display:block;margin-top:13px;font-size:11px;line-height:1.55;color:#7489a0}
+.c60-version{display:inline-block;font-size:10px!important;color:#437ec2;letter-spacing:0;font-weight:780;padding-left:5px}
+.c60-legacy-panel{margin:18px 0 24px;padding:12px 16px;border:1px solid #d8e4f4;background:#f7faff;border-radius:16px}
+.c60-legacy-panel>summary{cursor:pointer;font-size:12px;font-weight:760;line-height:1.7;color:#476c98;padding:9px 4px}
+.c60-legacy-panel>.m60-page{margin-top:18px}
