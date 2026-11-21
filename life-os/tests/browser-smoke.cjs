@@ -35,6 +35,8 @@ const server=http.createServer((req,res)=>{
   await page.locator('.mb7-dock button[data-page="reflection"]').click();
   await page.locator('input[name="m60_confidence"]').fill('7');
   await page.locator('textarea[name="m60_focus_evidence"]').fill('Проверочный результат по клиенту');
+  const invalid=await page.locator('form[data-form="mission-journal"]').evaluate(form=>Array.from(form.elements).filter(x=>typeof x.checkValidity==='function'&&!x.checkValidity()).map(x=>({name:x.name,value:x.value,message:x.validationMessage})));
+  assert.deepEqual(invalid,[],'Journal must permit plausible numeric input such as 7.1h sleep');
   await page.locator('.m60-submit').click();
   await page.locator('.mb7-dock button[data-page="progress"]').click();
   await page.locator('.m60-coach-button').waitFor();
