@@ -101,3 +101,11 @@
  .c60-diary-selects{gap:9px}
 }
 @media(prefers-reduced-motion:reduce){.c60-root *{animation:none!important;transition:none!important}}
+
+.c60-milestone-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.c60-milestone-grid>div{padding:12px 9px;background:#f3f6fb;border:1px solid #e6ebf3;border-radius:12px;opacity:.68;display:flex;flex-direction:column;gap:5px;min-width:0}
+.c60-milestone-grid>div.unlocked{opacity:1;background:#eaf7f0;border-color:#d3ebdf}
+.c60-milestone-grid strong{font-size:14px;color:#6384aa}
+.c60-milestone-grid>div.unlocked strong{color:#248056}
+.c60-milestone-grid small{font-size:11px;color:#8a9aaf}
+@media(max-width:370px){.c60-milestone-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
