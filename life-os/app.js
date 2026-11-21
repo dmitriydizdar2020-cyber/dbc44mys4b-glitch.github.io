@@ -625,7 +625,7 @@ case 'm60-toggle':await run(async()=>{await M60.saveDraft();await M60.toggle(btn
 case 'm60-day':{const i=Number(btn.dataset.index);if(Number.isInteger(i)&&i>=0&&i<60){await M60.saveDraft();state.mission60DayIndex=i;render()}break}
 case 'm60-today':await M60.saveDraft();state.mission60DayIndex=null;render();break;
 case 'm60-pace':await run(async()=>{await M60.saveDraft();await M60.pace(btn.dataset.value);render();notify('Комфортный темп сохранён')});break;
-case 'm60-diary-day':{const date=String(btn.dataset.date||today());if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&date<=today()){state.reflectionDate=date;state.page='reflection';render();scrollAppToTop()}break}
+case 'm60-day-pace':await run(async()=>{await M60.saveDraft();await M60.dayPace(btn.dataset.value,String(btn.dataset.date||today()));render();notify('Нагрузка дня обновлена без сброса отметок')});break; case 'm60-copy-coach':await run(async()=>{const report=M60.coachPrompt();if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(report);notify('Факты за 14 дней скопированы. Вставь их в ChatGPT для анализа.')}else{window.prompt('Скопируй агрегированные данные для ChatGPT:',report)}});break; case 'm60-diary-day':{const date=String(btn.dataset.date||today());if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&date<=today()){state.reflectionDate=date;state.page='reflection';render();scrollAppToTop()}break}
 case 'm60-scope':state.mission60Range=btn.dataset.value==='month'?'month':'week';render();break;
 case 'evo-start':await run(async()=>{await evolutionStart();render();notify('EVOLUTION PRO MAX: программа запущена')});break;
 case 'evo-day':{const i=Number(btn.dataset.index);if(Number.isInteger(i)&&i>=0&&i<84){await evolutionSaveNote();state.evolutionDayIndex=i;render()}break}
