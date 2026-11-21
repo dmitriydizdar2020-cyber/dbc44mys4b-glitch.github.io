@@ -98,73 +98,91 @@ function create(ctx){
  const elapsed=(p=get())=>p?Math.max(0,Math.min(60,delta(p.started,today())+1)):0;
  const dateOf=(i,p=get())=>p?plus(p.started,Math.max(0,Math.min(59,i))):today();
  const index=(p=get())=>Math.max(0,Math.min(59,S().mission60DayIndex==null?elapsed(p)-1:S().mission60DayIndex));
- function tasks(i,p=get()){
-  const phase=Math.floor(i/12),day=i%7,week=Math.floor(i/7),gentle=p?.pace==='gentle'||day===6;
-  const english=gentle?15:Math.min(35,20+phase*3),sport=gentle?12:Math.min(35,18+phase*3),learn=gentle?10:15+phase*2,focus=gentle?15:20+phase*5;
-  const speaking=i<20?'Составь 5 фраз и произнеси вслух':i<40?'Скажи краткий монолог и задай три вопроса':'Запиши минутный ответ и поправь две ошибки';
-  const list=[
-   {id:'focus',title:'Один шаг к заработку',detail:INCOME_STEPS[i]+' Выдели '+focus+' мин без переключений.',minutes:focus,core:true},
-   {id:'english',title:'Английский · '+english+' минут',detail:'Тема: '+ENGLISH_TOPICS[i%ENGLISH_TOPICS.length]+'. '+speaking+'. Добавь пять минут аудирования.',minutes:english,core:true},
-   {id:'sport',title:day===6?'Мягкое движение и восстановление':'Движение и форма',detail:MOVE_STEPS[day]+' — около '+sport+' мин. Не тренируйся через боль.',minutes:sport,core:true},
-   {id:'learning',title:'Полезные знания · '+learn+' минут',detail:'Разбери тему «'+LEARNING_TOPICS[i%LEARNING_TOPICS.length]+'». Запиши одно практическое применение.',minutes:learn,core:true},
-   {id:'nutrition',title:'Питание без крайностей',detail:FOOD_STEPS[i%FOOD_STEPS.length],minutes:5,core:false},
-   {id:'family',title:'Семья и уверенность',detail:SOCIAL_STEPS[i%SOCIAL_STEPS.length],minutes:10,core:false},
-   {id:'diary',title:'Вечерний дневник',detail:'Запиши ощущения, мысли, маленькую победу, препятствие и шаг на завтра.',minutes:5,core:true}
-  ];
-  if(day===6)list.push({id:'travel',title:'Идея для путешествия',detail:TRAVEL_STEPS[week%7],minutes:10,core:false});
-  return list;
+
+ function dayMode(i,p=get()){
+  const override=p?.days?.[dateOf(i,p)]?.mode;
+  return ['gentle','steady'].includes(override)?override:(p?.pace==='gentle'||i%7===6?'gentle':'steady');
  }
- function auto(id,date){
-  const x=log(date),doneTasks=S().data.tasks.filter(t=>t.task_date===date&&ctx.taskIsDone(t));
+ function tasks(i,p=get()){
+  const phase=Math.floor(i/12),day=i%7,week=Math.floor(i/7),gentle=dayMode(i,p)==='gentle';
+  const min=gentle?{focus:12,english:7,sport:5,learning:3,diary:3,family:0}:{focus:25,english:15,sport:10,learning:7,diary:5,family:5};
+  const grammar=['be / have и простые вопросы','Present Simple / Continuous','Past Simple и связки','Будущее, просьбы и аргументы','Связная речь и обсуждение условий'][phase];
+  const speaking=['Скажи 5 фраз о себе вслух','Сформулируй 4 вопроса клиенту','Перескажи вчерашний день','Объясни ценность услуги за минуту','Запиши минутный ответ и исправь 2 ошибки'][phase];
+  return [
+   {id:'focus',title:'Один проверяемый шаг к доходу',detail:INCOME_STEPS[i]+' Зафиксируй конкретный результат, а не только потраченное время.',minutes:min.focus,core:true},
+   {id:'english',title:'Английский · '+min.english+' мин',detail:'Тема: '+ENGLISH_TOPICS[i%ENGLISH_TOPICS.length]+'. '+grammar+'. '+speaking+'. Аудирование и повторение входят в эти минуты; пройденный урок можно засчитать.',minutes:min.english,core:true},
+   {id:'sport',title:day===6?'Бережное движение или восстановление':'Движение и энергия',detail:MOVE_STEPS[day]+'. Засчитывай уже проведённую тренировку. Не занимайся через боль.',minutes:min.sport,core:true},
+   {id:'learning',title:'Знание → применение',detail:'Тема: «'+LEARNING_TOPICS[i%LEARNING_TOPICS.length]+'». Назови один практический вывод, а каждый седьмой день повтори изученное.',minutes:min.learning,core:true},
+   {id:'nutrition',title:'Питание и самочувствие',detail:FOOD_STEPS[i%FOOD_STEPS.length]+' Без отдельного таймера и строгих запретов.',minutes:0,core:false},
+   {id:'family',title:'Близкие и уверенное общение',detail:SOCIAL_STEPS[i%SOCIAL_STEPS.length]+' Не стремись понравиться всем — слушай, проявляй инициативу и уважение.',minutes:min.family,core:false},
+   {id:'diary',title:'Дневник: факт → вывод → завтра',detail:'Запиши самочувствие, один реальный результат, препятствие и посильный шаг на завтра.',minutes:min.diary,core:true},
+   ...(day===6?[{id:'travel',title:'Путешествие и вдохновение',detail:TRAVEL_STEPS[week%7],minutes:0,core:false}]:[])
+  ];
+ }
+ function auto(id,date,p=get()){
+  const x=log(date),i=p?delta(p.started,date):-1;
   if(id==='diary')return !!x.reflection_done;
-  if(id==='english')return num(x.english_min)>=15;
-  if(id==='sport')return num(x.exercise_min)>=10||doneTasks.some(t=>['sport','health'].includes(t.category));
-  if(id==='learning')return num(x.learning_min)>=10;
-  if(id==='focus')return num(x.focus_min)>=15||doneTasks.some(t=>['finance','focus'].includes(t.category));
-  if(id==='family')return num(x.family_min)>=10;
+  const task=i>=0&&i<60?tasks(i,p).find(t=>t.id===id):null;
+  const legacy=date<'2026-11-21',oldReq={english:15,sport:10,learning:10,focus:15,family:10};
+  const req=legacy?oldReq[id]:task?.minutes;
+  if(S().data.tasks.some(t=>t.task_date===date&&t.m60_action_id===id&&ctx.taskIsDone(t)))return true;
+  if(id==='english')return req>0&&num(x.english_min)>=req;
+  if(id==='sport')return req>0&&num(x.exercise_min)>=req;
+  if(id==='learning')return req>0&&num(x.learning_min)>=req;
+  if(id==='focus')return req>0&&num(x.focus_min)>=req;
+  if(id==='family')return num(x.family_min)>=(req||5)&&num(x.family_min)>0;
   if(id==='nutrition')return x.m60_nutrition_done===true;
+  if(legacy&&['focus','sport'].includes(id))return S().data.tasks.some(t=>t.task_date===date&&ctx.taskIsDone(t)&&(id==='focus'?['finance','focus']:['sport','health']).includes(t.category));
   return false;
  }
- function status(id,date,p=get()){const recorded=auto(id,date);return {done:recorded||!!p?.days?.[date]?.checked?.[id],recorded}}
+ function status(id,date,p=get()){
+  const recorded=auto(id,date,p),manual=!!p?.days?.[date]?.checked?.[id];
+  return {done:recorded||manual,recorded,manual};
+ }
  function stats(p=get()){
   if(!p)return null;
-  const n=elapsed(p),all=Array.from({length:60},(_,i)=>tasks(i,p).length).reduce((a,b)=>a+b,0);
+  const n=elapsed(p),all=Array.from({length:60},(_,i)=>tasks(i,p).length).reduce((a,b)=>a+b,0),totalCore=300;
   let possible=0,done=0,active=0,core=0,corePossible=0,coreDone=0;
   const areas=Object.fromEntries([...AREAS.map(a=>a.id),'travel'].map(k=>[k,{done:0,possible:0}]));
   const weeks=Array.from({length:9},(_,i)=>({index:i,possible:0,done:0,active:0}));
   for(let i=0;i<n;i++){
    const d=dateOf(i,p),list=tasks(i,p),w=weeks[Math.floor(i/7)];let count=0;
-   for(const a of list){
-    const yes=status(a.id,d,p).done;possible++;w.possible++;areas[a.id].possible++;
-    if(a.core)corePossible++;
-    if(yes){done++;w.done++;areas[a.id].done++;count++;if(a.core)coreDone++}
+   for(const t of list){
+    const yes=status(t.id,d,p).done;
+    possible++;w.possible++;areas[t.id].possible++;
+    if(t.core)corePossible++;
+    if(yes){done++;w.done++;areas[t.id].done++;count++;if(t.core)coreDone++}
    }
    if(count){active++;w.active++}
-   if(list.filter(a=>a.core).every(a=>status(a.id,d,p).done))core++;
+   if(list.filter(t=>t.core).every(t=>status(t.id,d,p).done))core++;
   }
-  const privateTasks=S().data.tasks.filter(x=>x.task_date>=p.started&&x.task_date<=today()&&!['cancelled','skipped'].includes(x.status));
-  const personalDone=privateTasks.filter(ctx.taskIsDone).length;
-  return {elapsed:n,total:all,possible,done,active,core,corePossible,coreDone,areas,weeks,
-    personalDone,personalTotal:privateTasks.length,combinedDone:done+personalDone,combinedTotal:possible+privateTasks.length,
-    journey:all?Math.round(done/all*100):0,actual:possible?Math.round(done/possible*100):0};
+  const tasksOfPeriod=S().data.tasks.filter(x=>x.task_date>=p.started&&x.task_date<=today()&&!['cancelled','skipped'].includes(x.status));
+  const personalDone=tasksOfPeriod.filter(ctx.taskIsDone).length;
+  return {elapsed:n,total:all,totalCore,possible,done,active,core,corePossible,coreDone,areas,weeks,
+   personalDone,personalTotal:tasksOfPeriod.length,bonusDone:done-coreDone,
+   journey:Math.round(coreDone/totalCore*100),actual:corePossible?Math.round(coreDone/corePossible*100):0};
  }
-
  function recommendations(p=get(),s=stats(p)){
-  if(!p||!s)return ['Начни с одного конкретного шага. Реальные наблюдения начнут собираться после старта.'];
-  const available=s.elapsed,dayCut=plus(today(),-6),logs=S().data.daily_logs.filter(x=>x.log_date>=dayCut&&x.log_date<=today());
-  const energy=logs.map(x=>Number(x.evening_energy)).filter(x=>Number.isFinite(x)&&x>=1&&x<=10);
-  const avgEnergy=energy.length?energy.reduce((a,b)=>a+b,0)/energy.length:null;
-  const tips=[];
-  if(avgEnergy!==null&&avgEnergy<=4)tips.push('Энергия в последних записях невысокая. Выбери бережный темп и больше восстановления, не пытаясь наверстать пропущенное.');
-  if(available>=4&&s.active/available<0.5)tips.push('Пока менее половины дней были активными. Выбери один лёгкий шаг сегодня и вернись к ритму без самокритики.');
-  if(available>=4&&s.areas.focus.done<=1&&s.personalDone>=3)tips.push('Обычные дела выполняются, но шагов в сторону дохода немного. Выдели короткий блок на проверку спроса.');
-  if(available>=5&&s.areas.english.done/Math.max(1,s.areas.english.possible)<0.4)tips.push('Английский пока реже остальных практик. Начни с 15 минут устной речи и повторения.');
-  if(available>=5&&s.areas.sport.done/Math.max(1,s.areas.sport.possible)<0.4)tips.push('Движения было немного. Можно начать с короткой прогулки или мягкой разминки, если это подходит по самочувствию.');
-  if(available>=7&&s.active>=5)tips.push('Уже '+s.active+' активных дней — у тебя появляется повторяемый ритм. Сохраняй удобное время практики.');
-  if(s.done>=20&&ctx.monthIncome()===0)tips.push('Практика идёт, но доход пока не подтверждён. Сверяй не только выполненные шаги, но и отклики, предложения и реальные оплаты.');
-  if(!tips.length)tips.push('Прогресс начинается с подтверждённых действий. Держи один главный приоритет, а вечером фиксируй результат и препятствие.');
+  if(!p||!s)return ['Начни с одного конкретного шага. Реальные наблюдения появятся после первых записей.'];
+  const logs=S().data.daily_logs.filter(x=>x.log_date>=plus(today(),-6)&&x.log_date<=today());
+  const energy=logs.map(x=>Number(x.evening_energy)).filter(x=>x>=1&&x<=10),avg=energy.length?energy.reduce((a,b)=>a+b,0)/energy.length:null;
+  const contacts=logs.reduce((a,x)=>a+num(x.sales_contacts),0),replies=logs.reduce((a,x)=>a+num(x.sales_replies),0),tips=[];
+  if(avg!==null&&avg<5)tips.push('Энергия по дневнику низкая. Сегодня выбери 30-минутный режим и удели внимание восстановлению.');
+  if(s.elapsed>=4&&s.active/s.elapsed<.5)tips.push('Сейчас мало активных дней. Выбери один короткий шаг без попыток наверстать пропуски.');
+  if(s.elapsed>=5&&s.areas.english.done/Math.max(1,s.areas.english.possible)<.4)tips.push('Проверь, внесены ли уже пройденные уроки английского. Не добавляй второе длинное занятие.');
+  if(s.elapsed>=5&&s.areas.focus.done/Math.max(1,s.areas.focus.possible)<.4)tips.push('Шаги к доходу пока нерегулярны. Запланируй одно конкретное обращение или предложение.');
+  if(s.elapsed>=7&&contacts>0&&replies===0)tips.push('Контакты с клиентами записаны, но ответов нет. Проверь выбор клиента и персонализацию сообщения.');
+  if(s.elapsed>=7&&contacts===0&&ctx.monthIncome()===0)tips.push('Нет записанных клиентских контактов и оплат. Следующий шаг — проверить спрос с одним реальным клиентом.');
+  if(!tips.length)tips.push('Сохраняй один главный приоритет и фиксируй наблюдаемые результаты. Количество отметок не равно росту дохода.');
   return tips.slice(0,3);
  }
+ function coachPrompt(){
+  const p=get(),s=stats(p),logs=S().data.daily_logs.filter(x=>x.log_date>=plus(today(),-13)&&x.log_date<=today()),sum=k=>logs.reduce((a,x)=>a+num(x[k]),0);
+  const energy=logs.map(x=>Number(x.evening_energy)).filter(v=>v>=1&&v<=10);
+  const facts={date:today(),days_with_records:logs.length,program_day:s?.elapsed||0,completed_core:s?.coreDone||0,available_core:s?.corePossible||0,personal_tasks:s?.personalDone||0,english_min:sum('english_min'),sport_min:sum('exercise_min'),learning_min:sum('learning_min'),focus_min:sum('focus_min'),family_min:sum('family_min'),average_energy:energy.length?Math.round(10*energy.reduce((a,b)=>a+b,0)/energy.length)/10:null,client_contacts:sum('sales_contacts'),client_replies:sum('sales_replies'),offers:sum('sales_offers'),payments:sum('sales_paid'),income_this_month:ctx.monthIncome()};
+  return 'Проанализируй факты из моего MONTBLANC за 14 дней как внимательный наставник по поведению, английскому и B2B-продажам. Не придумывай данных, не ставь диагнозы и не гарантируй доход. Дай 3 проверяемых вывода, 2 улучшения на следующую неделю, план на завтра на 30–67 минут и 1 показатель для контроля через 7 дней. Не считай одну активность дважды.\n'+JSON.stringify(facts,null,2);
+ }
+
  function awards(s=stats()){
   if(!s)return [];
   return [
@@ -186,23 +204,30 @@ function create(ctx){
   const p=get();if(!p||!['steady','gentle'].includes(value))return;
   await ctx.saveProfile({...S().profile,montblanc60:{...p,pace:value}});
  }
+
+ async function dayPace(value,date){
+  const p=get();if(!p||!['gentle','steady'].includes(value)||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)||date>today())return;
+  const i=delta(p.started,date);if(i<0||i>=60)return;
+  const old=p.days[date]||{};
+  await ctx.saveProfile({...S().profile,montblanc60:{...p,days:{...p.days,[date]:{...old,mode:value}}}});
+ }
  async function toggle(id,date){
-  const p=get();if(!p||date>today()||!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
-  const i=delta(p.started,date);
-  if(i<0||i>=60||!tasks(i,p).some(t=>t.id===id))return;
+  const p=get();if(!p||date>today()||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date))return;
+  const i=delta(p.started,date);if(i<0||i>=60||!tasks(i,p).some(t=>t.id===id))return;
   if(id==='diary'){S().reflectionDate=date;S().page='reflection';ctx.render();ctx.scrollTop();return}
-  if(auto(id,date)){ctx.notify('Засчитано автоматически из дневника или плана');return}
+  if(auto(id,date,p)){ctx.notify('Уже засчитано по дневнику или явно привязанной задаче');return}
   const old=p.days[date]||{},checked={...(old.checked||{})};
   checked[id]=!checked[id];
   await ctx.saveProfile({...S().profile,montblanc60:{...p,days:{...p.days,[date]:{...old,checked}}}});
  }
+
  function summaryRing(s){
   const p=s?.journey||0;
   return '<div class="m60-ring" role="img" aria-label="Выполнено '+p+' процентов программы" style="--p:'+p+'"><div><strong>'+p+'%</strong><small>к вершине</small></div></div>';
  }
  function section(k,title,link=''){return '<div class="m60-sectionhead"><div><span>'+k+'</span><h2>'+title+'</h2></div>'+link+'</div>'}
  function onboarding(){
-  return '<section class="m60-card m60-start"><div class="m60-start-icon">🏔️</div><h2>Твой путь на 60 дней</h2><p>Английский, ежедневное движение, фокус на доходе, обучение, питание, семья и личный дневник. Пять основных практик и две дополнительные — без штрафов за пропуски.</p><div class="m60-tags"><b>60 дней</b><b>7 сфер</b><b>Свой темп</b></div>'+(S().local||S().demo?'<button class="m60-primary" data-action="m60-start">Начать экспедицию →</button>':'<p>Для сохранения открой приватный режим MONTBLANC на iPhone.</p>')+'</section>';
+  return '<section class="m60-card m60-start"><div class="m60-start-icon">🏔️</div><h2>Твой путь на 60 дней</h2><p>Английский, ежедневное движение, фокус на доходе, обучение, питание, семья и личный дневник. Пять главных практик и дополнительные шаги. Стандартный день — 67 минут, облегчённый — 30 минут. Без штрафов за пропуски.</p><div class="m60-tags"><b>60 дней</b><b>7 сфер</b><b>Свой темп</b></div>'+(S().local||S().demo?'<button class="m60-primary" data-action="m60-start">Начать экспедицию →</button>':'<p>Для сохранения открой приватный режим MONTBLANC на iPhone.</p>')+'</section>';
  }
  function checklist(i,p=get(),limit=12){
   const d=dateOf(i,p),future=d>today();
@@ -221,7 +246,7 @@ function create(ctx){
    section('ПЛАН НА ДЕНЬ','Мои дела','<button data-page="tasks">Весь план ›</button>')+
    '<section class="m60-card"><div class="m60-planhead"><span>Задачи: '+done+'/'+personal.length+'</span><button data-action="new-task" data-date="'+date+'">+ Добавить</button></div>'+
    (personal.length?personal.slice(0,6).map(x=>planRow(x)).join(''):'<p class="m60-empty">Поставь один конкретный шаг на сегодня.</p>')+'<button data-page="tasks" class="m60-textbutton">План на неделю →</button></section>'+
-   '<div class="m60-quickgrid"><button data-page="reflection" class="m60-quick lavender"><span>✍️</span><b>Дневник</b><small>'+(todayLog.reflection_done?'✓ Запись сохранена':'Мысли, энергия, достижения')+'</small></button><button data-page="progress" class="m60-quick green"><span>📊</span><b>Прогресс</b><small>'+(s?s.combinedDone:'0')+' выполненных действий</small></button></div>'+
+   '<div class="m60-quickgrid"><button data-page="reflection" class="m60-quick lavender"><span>✍️</span><b>Дневник</b><small>'+(todayLog.reflection_done?'✓ Запись сохранена':'Мысли, энергия, достижения')+'</small></button><button data-page="progress" class="m60-quick green"><span>📊</span><b>Прогресс</b><small>'+(s?s.coreDone:'0')+' главных практик</small></button></div>'+
    section('ПО ФАКТАМ','Мои показатели','<button data-page="progress">Подробнее ›</button>')+
    '<div class="m60-metrics"><button data-page="finance"><span>💶 Доход за месяц</span><strong>'+money(finances)+'</strong><small>Цель за год: '+money(year)+'</small></button><button data-page="finance"><span>💳 Долг</span><strong>'+money(debt)+'</strong><small>Фактический остаток</small></button><button data-page="reflection"><span>💙 Энергия</span><strong>'+(todayLog.evening_energy||'—')+'</strong><small>Оценка сегодня · /10</small></button><button data-page="mission60"><span>🏃 Практики</span><strong>'+(s?.done||0)+'</strong><small>За весь маршрут</small></button></div>'+
    section('ЕДИНАЯ СИСТЕМА','Важные направления')+'<div class="m60-linklist">'+
@@ -233,11 +258,11 @@ function create(ctx){
   const phaseSegments=PHASES.map((x,k)=>'<div class="'+(k===phase?'selected':'')+'"><b>'+(k+1)+'</b><small>'+x[0]+'</small></div>').join('');
   const calendar=Array.from({length:60},(_,k)=>{const date=dateOf(k,p),all=tasks(k,p),n=all.filter(t=>status(t.id,date,p).done).length;
    return '<button class="'+(k===i?'selected ':'')+(date>today()?'future ':'')+(n===all.length?'complete':'')+'" data-action="m60-day" data-index="'+k+'" aria-label="День '+(k+1)+': '+n+' из '+all.length+'"><b>'+(k+1)+'</b><span>'+(date>today()?'·':n===all.length?'✓':n||'·')+'</span></button>'}).join('');
-  return '<div class="m60-page"><div class="m60-title"><span>🏔️ ТВОЯ ЭКСПЕДИЦИЯ</span><h1>60 дней роста</h1><p>Пять этапов к более собранной жизни.</p></div><section class="m60-card m60-highlight"><div class="m60-feature"><div><span>ЭТАП '+(phase+1)+' / 5</span><h2>'+PHASES[phase][0]+'</h2><p>'+PHASES[phase][1]+'</p></div>'+summaryRing(s)+'</div><div class="m60-track"><i style="width:'+s.journey+'%"></i></div><div class="m60-track-label"><span>'+s.done+' из '+s.total+' практик</span><b>'+s.journey+'% пути</b></div><div class="m60-phase-mini">'+phaseSegments+'</div></section>'+
+  return '<div class="m60-page"><div class="m60-title"><span>🏔️ ТВОЯ ЭКСПЕДИЦИЯ</span><h1>60 дней роста</h1><p>Пять этапов к более собранной жизни.</p></div><section class="m60-card m60-highlight"><div class="m60-feature"><div><span>ЭТАП '+(phase+1)+' / 5</span><h2>'+PHASES[phase][0]+'</h2><p>'+PHASES[phase][1]+'</p></div>'+summaryRing(s)+'</div><div class="m60-track"><i style="width:'+s.journey+'%"></i></div><div class="m60-track-label"><span>'+s.coreDone+' из '+s.totalCore+' главных практик</span><b>'+s.journey+'% пути</b></div><div class="m60-phase-mini">'+phaseSegments+'</div></section>'+
   '<section class="m60-card"><div class="m60-dayhead"><div><span>ДЕНЬ '+(i+1)+' · '+e(ru(d))+'</span><h2>Мои практики</h2><p>'+(d>today()?'Будущий день: пока без отметок':ts.filter(x=>x.core&&status(x.id,d,p).done).length+' из 5 главных шагов')+'</p></div><strong>'+hits+'/'+ts.length+'</strong></div><div class="m60-daynav"><button data-action="m60-day" data-index="'+Math.max(0,i-1)+'" '+(i===0?'disabled':'')+' aria-label="Предыдущий день">‹</button><span>День '+(i+1)+'</span><button data-action="m60-day" data-index="'+Math.min(59,i+1)+'" '+(i===59?'disabled':'')+' aria-label="Следующий день">›</button><button data-action="m60-today">Сегодня</button></div>'+checklist(i,p)+
-  '<div class="m60-pace"><div><b>Твой темп</b><small>Восстановление тоже часть развития</small></div><div><button data-action="m60-pace" data-value="gentle" class="'+(p.pace==='gentle'?'active':'')+'">Бережно</button><button data-action="m60-pace" data-value="steady" class="'+(p.pace==='steady'?'active':'')+'">Обычно</button></div></div><button data-action="m60-diary-day" data-date="'+d+'" class="m60-primary" '+(d>today()?'disabled':'')+'>Вечерний дневник этого дня →</button></section>'+
+  '<div class="m60-pace"><div><b>Нагрузка этого дня</b><small>≈ '+ts.reduce((n,t)=>n+t.minutes,0)+' мин · уроки и тренировки не дублируются</small></div><div><button data-action="m60-day-pace" data-date="'+d+'" data-value="gentle" class="'+(dayMode(i,p)==='gentle'?'active':'')+'">30 мин</button><button data-action="m60-day-pace" data-date="'+d+'" data-value="steady" class="'+(dayMode(i,p)==='steady'?'active':'')+'">67 мин</button></div></div><button data-action="m60-diary-day" data-date="'+d+'" class="m60-primary" '+(d>today()?'disabled':'')+'>Вечерний дневник этого дня →</button></section>'+
   section('НА КАЖДЫЙ ДЕНЬ','Карта 60 дней')+'<section class="m60-card"><div class="m60-daygrid">'+calendar+'</div></section>'+
-  '<section class="m60-card"><h2>Факты программы</h2><div class="m60-summary"><div><b>'+s.done+'</b><small>Практик завершено</small></div><div><b>'+s.active+'</b><small>Активных дней</small></div><div><b>'+s.actual+'%</b><small>Выполнение на сегодня</small></div></div><button class="m60-textbutton" data-page="progress">Статистика и достижения →</button></section></div>';
+  '<section class="m60-card"><h2>Факты программы</h2><div class="m60-summary"><div><b>'+s.coreDone+'</b><small>Главных практик завершено</small></div><div><b>'+s.active+'</b><small>Активных дней</small></div><div><b>'+s.actual+'%</b><small>Выполнение на сегодня</small></div></div><button class="m60-textbutton" data-page="progress">Статистика и достижения →</button></section></div>';
  }
  function planRow(t){
   const done=ctx.taskIsDone(t),cat=ctx.taskLabel?.[t.category]||'Личное';
@@ -251,7 +276,7 @@ function create(ctx){
     return '<section class="m60-card m60-plangroup"><div class="m60-planhead"><div><h2>'+(i===0?'Сегодня':i===1?'Завтра':e(ru(date)))+'</h2><small>'+list.filter(ctx.taskIsDone).length+' / '+list.length+' сделано</small></div><button data-action="new-task" data-date="'+date+'" aria-label="Добавить на '+date+'">+</button></div>'+(list.length?list.map(planRow).join(''):'<p class="m60-empty">Задач пока нет.</p>')+'</section>'}).join('');
   return '<div class="m60-page"><div class="m60-title"><span>ПЛАНИРОВЩИК</span><h1>Мой план</h1><p>Сегодня, завтра, неделя и месяц.</p></div><div class="m60-planbuttons"><button class="m60-primary" data-action="new-task" data-date="'+now+'">+ Добавить задачу</button><button data-page="mission60">Практики →</button></div><div class="m60-summary"><div><b>'+all.filter(t=>!ctx.taskIsDone(t)).length+'</b><small>Осталось</small></div><div><b>'+done+'</b><small>Выполнено</small></div><div><b>'+overdue.length+'</b><small>Нужны решения</small></div></div>'+
   '<div class="m60-segments"><button data-action="m60-scope" data-value="week" class="'+(scope==='week'?'active':'')+'">7 дней</button><button data-action="m60-scope" data-value="month" class="'+(scope==='month'?'active':'')+'">30 дней</button></div>'+
-  (overdue.length?'<section class="m60-card"><h2>Ранее запланировано</h2>'+overdue.map(planRow).join('')+'</section>':'')+groups+
+  (overdue.length?'<section class="m60-card"><h2>Ранее запланировано · '+overdue.length+'</h2>'+overdue.slice(0,15).map(planRow).join('')+'</section>':'')+groups+
   '<section class="m60-card m60-tail"><button data-page="mission60">🏔️ Практики программы →</button><button data-page="ideas-hub">💡 Идеи и проекты →</button></section></div>';
  }
  function diaryRow(formData,old,finished){
@@ -259,7 +284,7 @@ function create(ctx){
   const integer=(k,min,max)=>{const raw=formData[k];if(raw===undefined)return old[k]??null;if(String(raw).trim()==='')return null;const n=Number(raw);if(!Number.isFinite(n)||n<min||n>max)throw Error('Проверь поле: '+k);return n};
   return {...old,log_date:String(formData.log_date),thoughts:text('thoughts'),win_of_day:text('win_of_day'),blocked_why:text('blocked_why'),
    future_step:text('future_step'),today_learned:text('today_learned'),tomorrow_one:text('tomorrow_one'),
-   m60_nutrition_note:text('m60_nutrition_note'),m60_family_note:text('m60_family_note'),m60_travel_note:text('m60_travel_note'),
+   m60_nutrition_note:text('m60_nutrition_note'),m60_family_note:text('m60_family_note'),m60_travel_note:text('m60_travel_note'),m60_focus_evidence:text('m60_focus_evidence'),m60_english_evidence:text('m60_english_evidence'),m60_social_evidence:text('m60_social_evidence'),
    m60_nutrition_done:formData.m60_nutrition_done==='yes',
    evening_energy:integer('evening_energy',1,10),evening_mood:integer('evening_mood',1,5),
    english_min:integer('english_min',0,720),exercise_min:integer('exercise_min',0,720),focus_min:integer('focus_min',0,720),learning_min:integer('learning_min',0,720),
@@ -295,7 +320,7 @@ function create(ctx){
    '<section class="m60-card"><div class="m60-cardtitle"><span>💙</span><div><h2>Как я себя чувствовал?</h2><small>Наблюдение без оценки себя.</small></div></div><div class="m60-two">'+field('evening_energy','Энергия 1–10',r.evening_energy,'type="number" min="1" max="10" inputmode="numeric" placeholder="6"')+field('evening_mood','Настроение 1–5',r.evening_mood,'type="number" min="1" max="5" inputmode="numeric" placeholder="3"')+'</div>'+
    area('thoughts','Мысли и чувства',r.thoughts,'Что сейчас меня волнует?')+area('win_of_day','Маленькая победа',r.win_of_day,'Что сегодня удалось?')+area('blocked_why','Что не сделал и почему?',r.blocked_why,'Факты, а не обвинения.')+'</section>'+
    '<section class="m60-card"><div class="m60-cardtitle"><span>🎯</span><div><h2>Движение к моим целям</h2><small>Даже один реальный шаг.</small></div></div>'+area('future_step','Что сделал для своего будущего?',r.future_step,'Доход, развитие, спорт, семья…')+area('today_learned','Что нового узнал?',r.today_learned,'Одна полезная мысль.')+area('tomorrow_one','Одно важное дело на завтра',r.tomorrow_one,'Конкретный и посильный шаг.')+'</section>'+
-   '<section class="m60-card"><div class="m60-cardtitle"><span>🥗</span><div><h2>Питание и жизнь</h2><small>Без жёстких ограничений и диет.</small></div></div><label class="m60-checklabel"><input type="checkbox" name="m60_nutrition_done" value="yes" '+(r.m60_nutrition_done?'checked':'')+'/><span>Сделал один подходящий осознанный выбор в питании</span></label>'+
+   '<section class="m60-card m60-evidence"><div class="m60-cardtitle"><span>🔎</span><div><h2>Доказательства изменений</h2><small>Один факт на сферу, не дополнительные достижения.</small></div></div>'+area('m60_focus_evidence','Результат по доходу',r.m60_focus_evidence,'Клиент, предложение, ответ или оплата')+area('m60_english_evidence','Что уже умею по-английски?',r.m60_english_evidence,'Фраза или разговор, который сегодня получился')+area('m60_social_evidence','Что удалось в общении?',r.m60_social_evidence,'Разговор, инициатива, улыбка, внимание к близким')+'</section>'+'<section class="m60-card"><div class="m60-cardtitle"><span>🥗</span><div><h2>Питание и жизнь</h2><small>Без жёстких ограничений и диет.</small></div></div><label class="m60-checklabel"><input type="checkbox" name="m60_nutrition_done" value="yes" '+(r.m60_nutrition_done?'checked':'')+'/><span>Сделал один подходящий осознанный выбор в питании</span></label>'+
    area('m60_nutrition_note','Питание и самочувствие',r.m60_nutrition_note,'Что подошло?')+area('m60_family_note','Семья и отношения',r.m60_family_note,'Тёплый момент или разговор.')+area('m60_travel_note','Путешествия и впечатления',r.m60_travel_note,'О какой поездке думаю?')+'</section>'+
    '<details class="m60-card m60-details" open><summary>📊 Время и привычки <small>Минуты и сон</small></summary><div class="m60-two">'+metrics.map(([key,label,value])=>field(key,label,value,'type="number" min="0" max="'+(key==='sleep_hours'?24:720)+'" '+(key==='sleep_hours'?'step=".25" inputmode="decimal"':'inputmode="numeric"')+' placeholder="0"')).join('')+'</div></details>'+
    '<button class="m60-primary m60-submit" type="submit">✓ Сохранить дневник за '+e(ru(date))+'</button><p class="m60-hint">При вводе данные сохраняются зашифрованным черновиком. Кнопка завершает итог дня.</p></form>'+
@@ -317,18 +342,18 @@ function create(ctx){
   ];
   const aw=awards(s),earned=aw.filter(x=>x.earned).length;
   return '<div class="m60-page"><div class="m60-title"><span>МОЙ РОСТ · ПО ФАКТАМ</span><h1>Прогресс</h1><p>Считаем действия отдельно от жизненных результатов.</p></div>'+
-   '<section class="m60-card m60-highlight"><div class="m60-feature"><div><span>🏔️ ПУТЬ К ВЕРШИНЕ</span><h2>'+(s?s.combinedDone:S().data.tasks.filter(ctx.taskIsDone).length)+' выполненных действий</h2><p>'+(s?s.done+' практик и '+s.personalDone+' личных задач':'Здесь появятся выполненные шаги программы.')+'</p></div>'+summaryRing(s)+'</div>'+
-   (s?'<div class="m60-track"><i style="width:'+s.journey+'%"></i></div><div class="m60-track-label"><span>'+s.done+' из '+s.total+' практик</span><b>'+s.journey+'%</b></div><p class="m60-hint">Из доступных за '+s.elapsed+' дней выполнено '+s.actual+'%. Будущие дни не считаются пропущенными.</p>':'<p>Начни программу на вкладке «60 дней».</p>')+'</section>'+
+   '<section class="m60-card m60-highlight"><div class="m60-feature"><div><span>🏔️ ПУТЬ К ВЕРШИНЕ</span><h2>'+(s?s.coreDone:S().data.tasks.filter(ctx.taskIsDone).length)+' главных практик</h2><p>'+(s?s.coreDone+' главных практик и отдельно '+s.personalDone+' личных задач':'Здесь появятся выполненные шаги программы.')+'</p></div>'+summaryRing(s)+'</div>'+
+   (s?'<div class="m60-track"><i style="width:'+s.journey+'%"></i></div><div class="m60-track-label"><span>'+s.coreDone+' из '+s.totalCore+' главных практик</span><b>'+s.journey+'%</b></div><p class="m60-hint">Из доступных за '+s.elapsed+' дней выполнено '+s.actual+'% главных практик. Личные задачи не суммируются с практиками повторно.</p>':'<p>Начни программу на вкладке «60 дней».</p>')+'</section>'+
    section('НАПРАВЛЕНИЯ','По семи сферам')+'<section class="m60-card m60-domains">'+AREAS.map(a=>{const v=s?.areas[a.id]||{done:0,possible:0},pct=v.possible?Math.round(100*v.done/v.possible):0;
     return '<div><div><span>'+a.emoji+' '+a.name+'</span><b>'+v.done+'/'+v.possible+'</b></div><div class="m60-track"><i style="width:'+pct+'%;background:'+a.color+'"></i></div></div>'}).join('')+'</section>'+
    section('РЕАЛЬНЫЕ ЗАПИСИ','Твои показатели')+'<div class="m60-metrics">'+indicators.map(x=>'<div><span>'+x[0]+' '+x[1]+'</span><strong>'+x[2]+'</strong><small>'+x[3]+'</small></div>').join('')+'</div>'+
    section('ФИНАНСЫ','От нуля к устойчивости')+'<section class="m60-card m60-finances"><div><span>Доход за месяц</span><b>'+money(m)+'</b></div><div><span>Остаток долга</span><b>'+money(debt)+'</b></div><div><span>Годовая цель дохода</span><b>'+money(goal)+'</b></div><button data-page="finance" class="m60-textbutton">Доходы, расходы и резерв →</button><button data-page="goals" class="m60-textbutton">Мои измеримые цели →</button></section>'+
    (s?'<section class="m60-card"><h2>Путь по неделям</h2><div class="m60-weekbars">'+s.weeks.map((w,i)=>{const pct=w.possible?Math.round(w.done/w.possible*100):0;return '<div><div><i style="height:'+pct+'%"></i></div><b>'+(i+1)+'</b><small>'+(w.possible?pct+'%':'—')+'</small></div>'}).join('')+'</div></section>':'')+
-   section('ПОДСКАЗКИ ПО ТВОИМ ЗАПИСЯМ','Что поможет двигаться дальше')+'<section class="m60-card m60-insights">'+recommendations(p,s).map(x=>'<div><span>✦</span><p>'+e(x)+'</p></div>').join('')+'<p class="m60-hint">Подсказки формируются локально по отметкам. Это не диагностика и не рекомендации врача.</p></section>'+
+   section('КОММЕРЧЕСКИЕ РЕЗУЛЬТАТЫ','Не количество галочек')+'<section class="m60-card"><div class="m60-summary"><div><b>'+logs.reduce((n,x)=>n+num(x.sales_contacts),0)+'</b><small>Обращений</small></div><div><b>'+logs.reduce((n,x)=>n+num(x.sales_replies),0)+'</b><small>Ответов</small></div><div><b>'+logs.reduce((n,x)=>n+num(x.sales_paid),0)+'</b><small>Оплат по журналу</small></div></div><p class="m60-hint">Это этапы воронки, а не разные достижения одного действия. Подтверждённый доход смотри в финансах.</p><button data-page="sales" class="m60-textbutton">Воронка продаж →</button></section>'+section('ПОДСКАЗКИ ПО ТВОИМ ЗАПИСЯМ','Что поможет двигаться дальше')+'<section class="m60-card m60-insights">'+recommendations(p,s).map(x=>'<div><span>✦</span><p>'+e(x)+'</p></div>').join('')+'<p class="m60-hint">Локальные подсказки по записям. Не медицинская диагностика.</p><button data-action="m60-copy-coach" class="m60-coach-button">Подготовить разбор в ChatGPT ↗</button><p class="m60-hint">В буфер копируются только агрегированные показатели за 14 дней, без мыслей из личного дневника. Отправка — вручную.</p></section>'+
    section('НАГРАДЫ','Заслуженные достижения')+'<section class="m60-card"><div class="m60-awards"><div class="m60-award-count"><strong>'+earned+'</strong><small>из '+aw.length+' открыто</small></div>'+aw.map(x=>'<div class="'+(x.earned?'earned':'')+'"><span>'+x.emoji+'</span><b>'+x.title+'</b><small>'+(x.earned?'Открыто':'Впереди')+'</small></div>').join('')+'</div><p class="m60-hint">Пропущенный день не обнуляет ранее сделанное.</p></section>'+
    '<section class="m60-card m60-tail"><button data-page="review">🧠 Недельные выводы →</button><button data-page="route">🏔️ Мой маршрут А → Б →</button><button data-page="more">▦ Все инструменты и архив →</button></section></div>';
  }
- return {AREAS,PHASES,INCOME_STEPS,recommendations,get,elapsed,dateOf,index,tasks,auto,status,stats,awards,start,pace,toggle,
+ return {AREAS,PHASES,INCOME_STEPS,recommendations,coachPrompt,get,elapsed,dateOf,index,dayMode,tasks,auto,status,stats,awards,start,pace,dayPace,toggle,
   journalRow:diaryRow,saveJournal,saveDraft,home,program,planner,diary,progress};
 }
 global.MONTBLANC60={create};
