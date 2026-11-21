@@ -24,3 +24,20 @@ jobs:
         run: node --input-type=module --check < life-os/app.js
       - name: Run 60-day regression tests
         run: node --test life-os/tests/montblanc60.test.cjs
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner
+        run: npm install --no-save playwright@1.56.1
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test real iPhone-size navigation and diary
+        run: node life-os/tests/browser-smoke.cjs
