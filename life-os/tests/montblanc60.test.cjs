@@ -96,3 +96,15 @@ test('program finishes and future completion is not accepted',async()=>{
  await m.dayPace('gentle','2027-01-26');
  assert.equal(Object.keys(state.profile.montblanc60.days).length,0);
 });
+
+test('gentle completed practices remain credited when the daily budget increases',async()=>{
+ const {module:m,state}=harness();
+ state.data.daily_logs.push({log_date:'2026-11-21',english_min:7,focus_min:12});
+ await m.dayPace('gentle','2026-11-21');
+ assert.equal(m.status('english','2026-11-21').done,true);
+ assert.equal(m.status('focus','2026-11-21').done,true);
+ await m.dayPace('steady','2026-11-21');
+ assert.equal(m.status('english','2026-11-21').done,true);
+ assert.equal(m.status('focus','2026-11-21').done,true);
+ assert.equal(state.profile.montblanc60.days['2026-11-21'].checked.english,true);
+});
