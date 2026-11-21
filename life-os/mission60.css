@@ -206,3 +206,35 @@ body:has(.mb12-shell) .toast{background:#fff!important;color:#2d5d9a!important;b
 .mb12-shell .mb7-more .mb7-menu-item strong{color:#2e4361!important}
 .mb12-shell .mb7-more .mb7-menu-item small{color:#8a9db0!important}
 .mb12-shell .mb7-more .mb7-menu-symbol{color:#447fc8!important}
+
+
+/* MONTBLANC 13 — evidence-led, touch-first refinements */
+.m60-evidence{background:linear-gradient(180deg,#ffffff 0%,#f7fbff 100%)!important;border-color:#dbe9fb!important}
+.m60-evidence textarea{min-height:80px;line-height:1.55}
+.m60-coach-button{width:100%;min-height:50px;border:1px solid #bfdbff;background:#eaf3ff;color:#205da9;border-radius:14px;padding:12px 15px;font-size:13px;font-weight:750;line-height:1.4;margin-top:10px;text-align:center}
+.m60-coach-button:focus-visible{outline:3px solid #8db6f6;outline-offset:2px}
+.m60-coach-button:hover{background:#dcecff}
+.m60-daily-focus{border-color:#c9ddf6!important;background:linear-gradient(135deg,#f0f6ff,#fff 80%)!important}
+.m60-daily-focus .m60-focus-label{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#4779bf;font-weight:800}
+.m60-daily-focus h2{font-size:22px;margin:10px 0}
+.m60-daily-focus p{font-size:13px;line-height:1.6}
+.m60-daily-focus .m60-textbutton{font-size:13px}
+.m60-pace{flex-wrap:wrap}
+.m60-pace>div:last-child{display:flex;flex-wrap:wrap}
+.m60-pace button{min-height:42px;min-width:80px}
+.m60-planrow>button{min-height:42px;min-width:42px}
+.m60-checkcopy small{font-variant-numeric:tabular-nums}
+@media(max-width:480px){
+ .m60-page{padding:0 1px 25px}
+ .m60-title h1{font-size:34px;line-height:1.1}
+ .m60-card{padding:16px;border-radius:18px}
+ .m60-feature{align-items:flex-start}
+ .m60-ring{width:90px;height:90px;padding:9px}
+ .m60-ring strong{font-size:23px}
+ .m60-pace{align-items:flex-start;gap:12px}
+ .m60-pace>div:first-child{width:100%}
+ .m60-pace>div:last-child{width:100%}
+ .m60-pace button{flex:1}
+ .m60-daygrid{gap:5px}
+}
+@media(prefers-reduced-motion:reduce){.m60-page *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
