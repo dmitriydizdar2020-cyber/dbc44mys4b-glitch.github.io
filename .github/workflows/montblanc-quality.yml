@@ -1,0 +1,24 @@
+name: MONTBLANC quality checks
+on:
+  push:
+    paths:
+      - 'life-os/**'
+      - '.github/workflows/montblanc-quality.yml'
+  pull_request:
+    paths:
+      - 'life-os/**'
+      - '.github/workflows/montblanc-quality.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: node --check life-os/mission60.js
+      - name: Run 60-day regression tests
+        run: node --test life-os/tests/montblanc60.test.cjs
