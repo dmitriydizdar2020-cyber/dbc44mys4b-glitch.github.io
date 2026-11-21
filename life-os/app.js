@@ -3,6 +3,7 @@
    No personal records or credentials are included in the public app source. */
 import {parseRepo,verifyPrivateRepo,readRemoteVault,writeRemoteVault} from './github-sync.js';
 import './mission60.js';
+import './challenge60.js';
 const root = document.getElementById('app');
 const cfg = window.LIFE_OS_CONFIG || {};
 const configReady = Boolean(cfg.supabaseUrl && cfg.supabasePublishableKey && /^https:\/\//.test(cfg.supabaseUrl));
@@ -620,7 +621,14 @@ case 'new-experiment':state.modal={type:'experiment'};render();break;
 case 'edit-experiment':state.modal={type:'experiment',id};render();break;
 case 'progress-period':state.progressPeriod=btn.dataset.value||'week';render();break;
 case 'route-period':state.routePeriod=btn.dataset.value||'week';render();break;
-case 'm60-start':await run(async()=>{await M60.start();render();notify('Новая 60-дневная экспедиция началась')});break;
+case 'm60-start':await run(async()=>{await M60.start();await C60.start();state.mission60DayIndex=null;render();notify('MONTBLANC CHALLENGE: день 1 открыт')});break;
+case 'c60-start':await run(async()=>{await C60.start();state.mission60DayIndex=null;render();notify('Новый вызов начался. Прежние записи сохранены.')});break;
+case 'c60-day':{const i=Number(btn.dataset.index);if(C60.canView(i)){await M60.saveDraft();state.mission60DayIndex=i;state.page='mission60';render();scrollAppToTop()}else notify('Этот день пока закрыт: заверши все практики предыдущего этапа.');break}
+case 'c60-proof-open':{const i=Number(btn.dataset.index);if(C60.ready()&&i===C60.frontier()){state.c60Proof={day:i,id:btn.dataset.id};render()}break}
+case 'c60-proof-close':state.c60Proof=null;render();break;
+case 'c60-lesson-copy':await run(async()=>{const i=Number(btn.dataset.index);if(!C60.canView(i))throw Error('Урок ещё не открыт.');const value=C60.dailyLessonPrompt(i);if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else window.prompt('Скопируй план занятия:',value);notify('Полный план урока скопирован. Вставь его в ChatGPT.');});break;
+case 'c60-copy-report':await run(async()=>{const sensitive=btn.dataset.mode==='journal';if(sensitive&&!window.confirm('Полный отчёт будет включать твои личные записи и заметки о действиях. Хочешь скопировать эти данные вручную в ChatGPT?'))return;const value=C60.reportPrompt(sensitive);if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);else window.prompt('Скопируй отчёт:',value);notify(sensitive?'Данные с дневником скопированы только на этом устройстве':'Агрегированная аналитика скопирована без записей дневника');});break;
+
 case 'm60-toggle':await run(async()=>{await M60.saveDraft();await M60.toggle(btn.dataset.id,btn.dataset.date);render()});break;
 case 'm60-day':{const i=Number(btn.dataset.index);if(Number.isInteger(i)&&i>=0&&i<60){await M60.saveDraft();state.mission60DayIndex=i;render()}break}
 case 'm60-today':await M60.saveDraft();state.mission60DayIndex=null;render();break;
@@ -641,7 +649,8 @@ case 'export':{if(state.local){await downloadEncrypted();notify('Зашифро�
 case 'logout':if(state.local){lockLocal();break}await run(async()=>{const {error}=await client.auth.signOut();if(error)throw error;sessionUser=null;state.profile=null;state.data=Object.fromEntries(TABLES.map(k=>[k,[]]));state.mode='auth';render()});break;
 }}
 async function submitForm(form){const data=formValues(form),kind=form.dataset.form;if(!kind)return;await run(async()=>{
-if(kind==='mission-journal'){await M60.saveJournal(data,true);render();notify(state.demo?'Демо-запись сохранена в этой вкладке':'Личный дневник сохранён');return}
+if(kind==='mission-journal'){await M60.saveJournal(data,true);if(C60.has())await C60.completeDiary(String(data.log_date||today()));render();notify(state.demo?'Демо-запись сохранена в этой вкладке':'Личный дневник сохранён');return}
+if(kind==='c60-proof'){await C60.recordProof(data);state.c60Proof=null;state.mission60DayIndex=null;render();notify('Практика засчитана по твоему результату');return}
 if(kind==='github-sync'){const repo=String(data.repo||'').trim(),token=String(data.token||github.token||'').trim();if(!token)throw Error('Создай GitHub token и вставь его в это поле');const ok=await ghConfigure(repo,token);render();if(ok)notify('Приватный GitHub подключён, архив сохранён');return}
 if(kind==='login'){const {data:r,error}=await client.auth.signInWithPassword({email:String(data.email).trim(),password:data.password});if(error)throw error;sessionUser=r.user;await loadRemote();return}
 if(kind==='local-auth'){const password=String(data.password||'');if(password.length<12)throw Error('Пароль должен содержать не менее 12 символов');if(!vaultStorage?.getItem(VAULT_KEY)&&password!==String(data.confirm_password||''))throw Error('Пароли не совпадают');try{await openLocal(password)}catch(err){throw Error('Не удалось открыть: неверный пароль или повреждённый архив.')}if(data.remember_device==='yes'&&state.local){try{await rememberThisDevice();render();notify('Этот iPhone запомнен — следующий вход без пароля')}catch(err){notify('Быстрый вход не включён: '+err.message)}}return}
@@ -713,6 +722,12 @@ const M60=window.MONTBLANC60.create({
  taskLabel, saveProfile, saveRecord, monthIncome, currentDebt, render, notify,
  scrollTop:scrollAppToTop,localKey:()=>Boolean(localCryptoKey)
 });
+const legacyM60Pages={home:M60.home,program:M60.program,diary:M60.diary,progress:M60.progress};
+const C60=window.MONTBLANCCHALLENGE.create({state:()=>state,e,num,today,plusDays,deltaDays,ruDate,money,taskIsDone,saveProfile,saveRecord,monthIncome,currentDebt,legacy:M60});
+M60.home=()=>C60.has()?C60.home():legacyM60Pages.home();
+M60.program=()=>C60.has()?C60.program():legacyM60Pages.program()+(state.local||state.demo?'<div class="m60-page c60-root">'+C60.onboard()+'</div>':'');
+M60.diary=()=>C60.has()?C60.diary():legacyM60Pages.diary();
+M60.progress=()=>C60.has()?C60.progress():legacyM60Pages.progress();
 let m60DraftTimer=null;
 document.addEventListener('input',event=>{
  const f=event.target?.closest?.('form[data-form="mission-journal"]');
