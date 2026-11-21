@@ -63,7 +63,7 @@ test('only all six real tasks unlock tomorrow, not the same calendar day',async(
  for(const id of ['focus','english','sport','presence','learning'])await m.recordProof(form(m,0,id));
  assert.equal(m.frontier(),0);
  assert.equal(m.canView(1),false);
- state.data.daily_logs.push({log_date:'2026-11-21',reflection_done:true,thoughts:'День был насыщенный, но спокойный',win_of_day:'Урок и реальная тренировка'});
+ Object.assign(state.data.daily_logs.find(x=>x.log_date==='2026-11-21'),{reflection_done:true,thoughts:'День был насыщенный, но спокойный',win_of_day:'Урок и реальная тренировка'});
  await m.completeDiary('2026-11-21');
  assert.equal(m.frontier(),1);
  assert.equal(m.ready(),false);
@@ -82,30 +82,28 @@ test('diary requires a written story and a real result',async()=>{
  await m.completeDiary('2026-11-21');
  assert.ok(m.get().days[0].proofs.diary);
 });
-test('weekly seventh day requires a genuine recovery session, not intense training',async()=>{
- const {m,date,plusDays}=make();await m.start();
- for(let i=0;i<7;i++){
-   if(i>0)date(plusDays('2026-11-21',i));
-   for(const t of m.tasks(i).filter(x=>x.id!=='diary'))await m.recordProof(form(m,i,t.id));
-   const day=plusDays('2026-11-21',i);
-   // mock a proper saved journal
-   const log={log_date:day,reflection_done:true,thoughts:'Важные мысли за этот день',win_of_day:'Я выполнил всю программу'};
-   const state=m.get(); // state reference intentionally read after writes
-   // diary must be a stored daily log, so this loop tests sport first
-   if(i===6){
-    await assert.rejects(()=>m.recordProof({...form(m,i,'sport'),workout_type:'теннис'}),/восстановительная/);
-   }
-   // completion of diary here exercised in other tests; advance in separate test
-   break;
+test('seventh day is recovery practice with a meaningful minimum',async()=>{
+ const {m,state,date,plusDays}=make();await m.start();
+ for(let i=0;i<6;i++){
+  const d=plusDays('2026-11-21',i);date(d);
+  for(const t of m.tasks(i).filter(x=>x.id!=='diary'))await m.recordProof(form(m,i,t.id));
+  Object.assign(state.data.daily_logs.find(x=>x.log_date===d),{reflection_done:true,thoughts:'Записал мысли и самочувствие после тренировок',win_of_day:'Я завершил важные практики'});
+  await m.completeDiary(d);
  }
+ date(plusDays('2026-11-21',6));
+ assert.equal(m.frontier(),6);
  assert.equal(m.minimum('sport',6),20);
+ await assert.rejects(()=>m.recordProof({...form(m,6,'sport'),workout_type:'теннис'}),/восстановительная/);
+ await m.recordProof(form(m,6,'sport'));
+ assert.equal(m.get().days[6].proofs.sport.type,'восстановление');
 });
+
 test('full sixty-day route is completable with one calendar day per stage',async()=>{
  const {m,state,date,plusDays}=make();await m.start();
  for(let i=0;i<60;i++){
   const d=plusDays('2026-11-21',i);date(d);
   for(const t of m.tasks(i).filter(x=>x.id!=='diary'))await m.recordProof(form(m,i,t.id));
-  state.data.daily_logs.push({log_date:d,reflection_done:true,thoughts:'Сегодня было сложно и интересно, но я справился',win_of_day:'Практики и тренировка выполнены',evening_energy:Math.min(10,5+i/20),m60_confidence:Math.min(10,5+i/25)});
+  Object.assign(state.data.daily_logs.find(x=>x.log_date===d),{reflection_done:true,thoughts:'Сегодня было сложно и интересно, но я справился',win_of_day:'Практики и тренировка выполнены',evening_energy:Math.min(10,5+i/20),m60_confidence:Math.min(10,5+i/25)});
   await m.completeDiary(d);
   assert.equal(m.frontier(),i+1,'finished day '+(i+1));
   if(i<59)assert.equal(m.ready(),false,'cannot skip same-day gate');
