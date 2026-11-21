@@ -27,7 +27,9 @@ const server=http.createServer((req,res)=>{
   await page.locator('[data-action="demo"]').waitFor({timeout:20000});
   await page.locator('[data-action="demo"]').click();
   await page.locator('.m60-title h1').getByText('Сегодня').waitFor();
-  await page.locator('[data-action="m60-start"]').click();
+  assert.ok((await page.locator('.c60-upgrade').innerText()).includes('60 дней полной прокачки'),'Upgrade must be visible on home');
+  await page.locator('.mb7-dock button[data-page="mission60"]').click();
+  await page.locator('[data-action="c60-start"]').click();
   await page.locator('.mb7-dock button[data-page="mission60"]').click();
   await page.locator('.c60-root .c60-practice').first().waitFor();
   assert.equal(await page.locator('.c60-day[data-index="1"]').isDisabled(),true,'Day 2 must start locked');
